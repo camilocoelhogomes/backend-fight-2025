@@ -1,0 +1,57 @@
+services:
+  figth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: figth
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=figth-postgres
+      - DB_PORT=5432
+      - DB_NAME=figth_db
+      - DB_USER=figth_user
+      - DB_PASSWORD=figth_password
+      - PAYMENT_PROCESSOR_HOST=payment-processor-default
+      - PAYMENT_PROCESSOR_PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - figth-network
+      - payment-processor
+  postgres:
+    image: postgres:17-alpine
+    container_name: figth-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: figth_db
+      POSTGRES_USER: figth_user
+      POSTGRES_PASSWORD: figth_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - figth-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U figth_user -d figth_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: postgres -c checkpoint_timeout=600 -c max_wal_size=4096 -c synchronous_commit=0 -c fsync=0 -c full_page_writes=0
+
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  figth-network:
+    driver: bridge
+  payment-processor:
+    external: true 

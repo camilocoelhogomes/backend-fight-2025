@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Comando init_env - Inicializa o ambiente de desenvolvimento
+# Uso: ./init_env
+
+# Obter o diretório do script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Executar o script de inicialização
+"$SCRIPT_DIR/scripts/init-env.sh" 

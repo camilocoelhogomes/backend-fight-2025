@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: figth
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:figth_db}
+    username: ${DB_USER:figth_user}
+    password: ${DB_PASSWORD:figth_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.backend.figth: INFO
+
+# Configuração do Payment Processor
+payment:
+  processor:
+    url: http://${PAYMENT_PROCESSOR_HOST:localhost}:${PAYMENT_PROCESSOR_PORT:8001} 

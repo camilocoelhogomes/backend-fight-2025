@@ -1,0 +1,50 @@
+# Arquivos de desenvolvimento
+.git
+.gitignore
+README.md
+API_DOCUMENTATION.md
+README-Docker.md
+HELP.md
+
+# Arquivos de IDE
+.vscode
+.idea
+*.iml
+.cursor
+
+# Arquivos de build
+target/
+!target/*.jar
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de configuração local
+application-local.yml
+application-local.properties
+
+# Scripts de desenvolvimento
+debug.sh
+init_env
+scripts/
+
+# Docker (exceto o Dockerfile)
+docker-compose*.yml
+postgres-config/
+init-scripts/
+
+# Arquivos de teste
+src/test/
+
+# Arquivos de documentação
+docs/
+*.md 

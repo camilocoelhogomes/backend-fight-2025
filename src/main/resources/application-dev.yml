@@ -1,0 +1,21 @@
+# Configurações específicas para desenvolvimento/debug
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+logging:
+  level:
+    com.backend.figth: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Configuração do Payment Processor para desenvolvimento
+payment:
+  processor:
+    url: http://localhost:8001 
