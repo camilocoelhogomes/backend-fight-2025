@@ -1,8 +1,8 @@
-# Multi-stage build para otimizar tamanho da imagem
-FROM eclipse-temurin:21-jdk-alpine AS builder
+# Multi-stage build para otimizar tamanho da imagem docker pull 
+FROM amazoncorretto:21-alpine3.22-full AS builder
 
 # Instalar dependências necessárias para build
-RUN apk add --no-cache maven
+RUN apk update && apk add --no-cache maven && rm -rf /var/cache/apk/*
 
 # Definir diretório de trabalho
 WORKDIR /app
@@ -23,14 +23,14 @@ COPY src src
 RUN mvn clean package -DskipTests -B
 
 # Stage final - apenas runtime
-FROM eclipse-temurin:21-jre-alpine
+FROM amazoncorretto:21-alpine3.22-full
 
 # Criar usuário não-root para segurança
 RUN addgroup -g 1001 -S appgroup && \
   adduser -u 1001 -S appuser -G appgroup
 
 # Instalar dependências mínimas
-RUN apk add --no-cache tzdata
+RUN apk update && apk add --no-cache tzdata && rm -rf /var/cache/apk/*
 
 # Definir timezone
 ENV TZ=UTC
