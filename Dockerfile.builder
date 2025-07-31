@@ -1,4 +1,5 @@
-FROM ghcr.io/graalvm/graalvm-community:21 AS binary-source
+# Multi-stage build para Spring Boot Native
+FROM ghcr.io/graalvm/graalvm-community:21 AS builder
 
 # Configurar variáveis de ambiente para build nativo
 ENV MAVEN_OPTS="-Xmx6g -XX:+UseG1GC"
@@ -20,10 +21,5 @@ COPY src src
 RUN mvn clean package -Pnative -DskipTests -B
 
 
-FROM ubuntu:latest
-WORKDIR /app
-COPY --from=binary-source /app/target/figth /app/figth
-RUN chmod +x /app/figth
-EXPOSE 8080
-CMD ["/app/figth"]
-# Health check
+# Comando padrão que permite acesso interativo
+CMD ["/bin/bash"]

@@ -2,9 +2,9 @@ spring:
   application:
     name: figth
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:figth_db}
-    username: ${DB_USER:figth_user}
-    password: ${DB_PASSWORD:figth_password}
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
@@ -24,4 +24,4 @@ logging:
 # Configuração do Payment Processor
 payment:
   processor:
-    url: http://${PAYMENT_PROCESSOR_HOST:localhost}:${PAYMENT_PROCESSOR_PORT:8001} 
+    url: ${PAYMENT_PROCESSOR_URL}

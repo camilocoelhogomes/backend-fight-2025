@@ -5,6 +5,9 @@ import com.backend.figth.dto.PaymentResponseDTO;
 import com.backend.figth.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,11 +23,13 @@ public class PaymentController {
   private final PaymentService paymentService;
 
   @PostMapping
-  public ResponseEntity<PaymentResponseDTO> createPayment(@RequestBody PaymentRequestDTO request) {
+  public CompletableFuture<ResponseEntity<PaymentResponseDTO>> createPayment(
+      @RequestBody PaymentRequestDTO request) {
     log.info("Received payment request with correlationId: {}", request.getCorrelationId());
 
-    PaymentResponseDTO response = paymentService.processPayment(request);
+    return this.paymentService
+        .processPaymentAsync(request)
+        .thenApply(v -> ResponseEntity.ok(new PaymentResponseDTO()));
 
-    return ResponseEntity.ok(response);
   }
 }

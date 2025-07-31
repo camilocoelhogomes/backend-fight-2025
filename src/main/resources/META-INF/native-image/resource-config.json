@@ -1,0 +1,13 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "application.yml"
+      },
+      {
+        "pattern": "application.properties"
+      }
+    ]
+  },
+  "bundles": []
+}

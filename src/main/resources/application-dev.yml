@@ -1,5 +1,10 @@
 # Configurações específicas para desenvolvimento/debug
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/figth_db
+    username: figth_user
+    password: figth_password
+    driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
     properties:

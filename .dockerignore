@@ -15,6 +15,7 @@ HELP.md
 # Arquivos de build
 target/
 !target/*.jar
+!target/figth
 
 # Logs
 *.log

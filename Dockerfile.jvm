@@ -1,0 +1,76 @@
+# Multi-stage build para Spring Boot com JVM
+FROM amazoncorretto:21-alpine AS builder
+
+# Instalar Maven 3.9.6
+RUN apk add --no-cache wget && \
+  wget -q https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz && \
+  tar -xzf apache-maven-3.9.6-bin.tar.gz -C /opt && \
+  rm apache-maven-3.9.6-bin.tar.gz && \
+  apk del wget
+
+# Configurar Maven
+ENV MAVEN_HOME=/opt/apache-maven-3.9.6
+ENV PATH=$MAVEN_HOME/bin:$PATH
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar apenas os arquivos necessários para build
+COPY pom.xml .
+
+# Copiar código fonte
+COPY src src
+
+# Build da aplicação tradicional
+RUN mvn clean package -DskipTests -B
+
+# Stage final - imagem JVM otimizada
+FROM amazoncorretto:21-alpine
+
+# Criar usuário não-root para segurança
+RUN addgroup -g 1001 -S appgroup && \
+  adduser -u 1001 -S appuser -G appgroup
+
+# Instalar dependências mínimas
+RUN apk update && apk add --no-cache tzdata && rm -rf /var/cache/apk/*
+
+# Definir timezone
+ENV TZ=UTC
+
+# Criar diretório da aplicação
+WORKDIR /app
+
+# Copiar o JAR compilado
+COPY --from=builder /app/target/*.jar app.jar
+
+# Mudar propriedade do arquivo para o usuário da aplicação
+RUN chown -R appuser:appgroup /app
+
+# Mudar para usuário não-root
+USER appuser
+
+# Expor porta
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+# Comando para executar a aplicação com JVM otimizada
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-Xms64m", \
+  "-Xmx96m", \
+  "-XX:MaxMetaspaceSize=32m", \
+  "-XX:+UseG1GC", \
+  "-XX:G1HeapRegionSize=1m", \
+  "-XX:MaxGCPauseMillis=200", \
+  "-XX:+UseStringDeduplication", \
+  "-XX:+OptimizeStringConcat", \
+  "-XX:+UseCompressedOops", \
+  "-XX:+UseCompressedClassPointers", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-Dspring.profiles.active=prod", \
+  "-Dserver.port=8080", \
+  "-jar", \
+  "/app/app.jar"] 
