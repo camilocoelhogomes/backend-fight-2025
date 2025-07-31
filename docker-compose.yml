@@ -4,20 +4,10 @@ services:
     container_name: service_1
     restart: unless-stopped
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=figth_db
+      - DB_URL=jdbc:postgresql://postgres:5432/figth_db
       - DB_USER=figth_user
       - DB_PASSWORD=figth_password
-      - PAYMENT_PROCESSOR_HOST=payment-processor-default
-      - PAYMENT_PROCESSOR_PORT=8080
-    command: [
-      "--spring.datasource.url=jdbc:postgresql://postgres:5432/figth_db",
-      "--spring.datasource.username=figth_user",
-      "--spring.datasource.password=figth_password",
-      "--payment.processor.url=http://payment-processor-default:8080",
-      "--server.port=8080"
-    ]
+      - PAYMENT_PROCESSOR_URL=http://payment-processor-default:8080
     ports:
       - "8080:8080"
     depends_on:
@@ -37,7 +27,7 @@ services:
       POSTGRES_DB: figth_db
       POSTGRES_USER: figth_user
       POSTGRES_PASSWORD: figth_password
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-collate=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql

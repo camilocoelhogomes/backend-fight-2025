@@ -111,30 +111,6 @@
 					<metadataRepository>
 						<enabled>true</enabled>
 					</metadataRepository>
-					<buildArgs>
-						<buildArg>--initialize-at-build-time=org.hibernate.validator.internal.engine.messageinterpolation.el.SimpleELContext</buildArg>
-						<buildArg>--initialize-at-build-time=org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator</buildArg>
-						<buildArg>--initialize-at-build-time=org.hibernate.validator.internal.engine.DefaultClockProvider</buildArg>
-						<buildArg>--initialize-at-build-time=org.hibernate.validator.internal.engine.scripting.DefaultScriptEvaluatorFactory</buildArg>
-						<!-- Permitir variáveis de ambiente em tempo de execução -->
-						<buildArg>--enable-http</buildArg>
-						<buildArg>--enable-https</buildArg>
-						<buildArg>--enable-all-security-services</buildArg>
-						<buildArg>--allow-incomplete-classpath</buildArg>
-						<buildArg>--no-fallback</buildArg>
-						<!-- Configuração CRÍTICA para variáveis de ambiente -->
-						<buildArg>--initialize-at-run-time=org.springframework.core.env.Environment</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.core.env.PropertySourcesPropertyResolver</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.core.env.SystemEnvironmentPropertySource</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.core.env.MapPropertySource</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.core.env.MutablePropertySources</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.boot.context.config.ConfigDataEnvironment</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor</buildArg>
-						<!-- Para Feign -->
-						<buildArg>--initialize-at-run-time=org.springframework.cloud.openfeign.FeignClient</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.cloud.openfeign.FeignClientFactoryBean</buildArg>
-						<buildArg>--initialize-at-run-time=org.springframework.cloud.openfeign.Targeter</buildArg>
-					</buildArgs>
 				</configuration>
 				<executions>
 					<execution>

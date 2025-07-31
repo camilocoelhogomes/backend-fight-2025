@@ -6,12 +6,15 @@ import com.backend.figth.dto.PaymentProcessorResponseDTO;
 import com.backend.figth.dto.PaymentRequestDTO;
 import com.backend.figth.dto.PaymentResponseDTO;
 import com.backend.figth.entity.Payment;
+import com.backend.figth.entity.PaymentDLQ;
 import com.backend.figth.repository.PaymentRepository;
+import com.backend.figth.repository.PaymentDLQRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,6 +28,7 @@ public class PaymentService {
 
 	private final PaymentProcessorClient paymentProcessorClient;
 	private final PaymentRepository paymentRepository;
+	private final PaymentDLQRepository paymentDLQRepository;
 
 	@Async("taskExecutor")
 	public CompletableFuture<PaymentResponseDTO> processPaymentAsync(PaymentRequestDTO request) {
@@ -41,7 +45,6 @@ public class PaymentService {
 					requestTime);
 
 			log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
-
 			// Passo 2: Chamar payment processor (sequencial)
 			PaymentProcessorResponseDTO processorResponse = paymentProcessorClient
 					.processPayment(processorRequest);
@@ -71,12 +74,38 @@ public class PaymentService {
 			log.info("Async payment processing completed successfully for correlationId: {}",
 					request.getCorrelationId());
 
-			return CompletableFuture.completedFuture(response);
+			return CompletableFuture.completedFuture(new PaymentResponseDTO(processorResponse.getMessage(),
+					"SUCCESS"));
 
 		} catch (Exception e) {
 			log.error("Error during async payment processing for correlationId: {}",
 					request.getCorrelationId(), e);
-			return CompletableFuture.failedFuture(e);
+
+			// Capturar falha na DLQ
+			saveToDLQ(request, requestTime, e);
+
+			return CompletableFuture.completedFuture(new PaymentResponseDTO(e.getMessage(), "FAILED"));
+		}
+	}
+
+	private void saveToDLQ(PaymentRequestDTO request, Instant requestTime, Exception error) {
+		try {
+			log.info("Saving failed payment to DLQ for correlationId: {}", request.getCorrelationId());
+
+			PaymentDLQ dlqEntry = new PaymentDLQ();
+			dlqEntry.setCorrelationId(UUID.fromString(request.getCorrelationId()));
+			dlqEntry.setAmount(request.getAmount());
+			dlqEntry.setPartitionKey(1);
+			dlqEntry.setProcessed(false);
+			dlqEntry.setCreatedAt(LocalDateTime.ofInstant(requestTime, ZoneId.systemDefault()));
+
+			paymentDLQRepository.save(dlqEntry);
+
+			log.info("Failed payment successfully saved to DLQ for correlationId: {}",
+					request.getCorrelationId());
+		} catch (Exception dlqError) {
+			log.error("Failed to save payment to DLQ for correlationId: {}",
+					request.getCorrelationId(), dlqError);
 		}
 	}
 }
