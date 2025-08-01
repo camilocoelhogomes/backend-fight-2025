@@ -15,10 +15,6 @@ COPY pom.xml .
 
 # Copiar código fonte
 COPY src src
-ENV DB_URL=jdbc:postgresql://localhost:5432/figth_db
-ENV DB_USER=figth_user
-ENV DB_PASSWORD=figth_password
-ENV PAYMENT_PROCESSOR_URL=http://localhost:8081
 # Build da aplicação nativa
 RUN mvn clean package -Pnative -DskipTests -B
 

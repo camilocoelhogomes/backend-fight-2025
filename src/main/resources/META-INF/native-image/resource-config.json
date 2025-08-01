@@ -5,9 +5,8 @@
         "pattern": "application.yml"
       },
       {
-        "pattern": "application.properties"
+        "pattern": "application-*.yml"
       }
     ]
-  },
-  "bundles": []
+  }
 }

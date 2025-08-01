@@ -6,20 +6,39 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:25}
+      minimum-idle: ${HIKARI_MIN_IDLE:10}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:10000}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:300000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME:900000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION:30000}
+      pool-name: FigthHikariCP
+      connection-test-query: SELECT 1
+      validation-timeout: 3000
   jpa:
-    show-sql: true
+    show-sql: ${HIBERNATE_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  cloud:
+    openfeign:
+      client:
+        config:
+          payment-processor:
+            url: ${PAYMENT_PROCESSOR_URL}
 
 server:
   port: 8080
 
 logging:
   level:
-    com.backend.figth: INFO
+    root: ${LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId:-},%X{spanId:-}] - %msg%n"
 
 # Configuração do Payment Processor
 payment:
