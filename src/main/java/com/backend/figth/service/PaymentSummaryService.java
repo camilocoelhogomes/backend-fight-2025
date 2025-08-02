@@ -22,7 +22,7 @@ public class PaymentSummaryService {
 
   private final PaymentRepository paymentRepository;
 
-  @Async("dbExecutor")
+  @Async("dbExecutorReader")
   public CompletableFuture<PaymentSummaryResponseDTO> getPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
     try {
       log.info("Getting payment summary from {} to {}", fromDate, toDate);
