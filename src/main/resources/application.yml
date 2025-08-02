@@ -7,21 +7,21 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:25}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:20}
       minimum-idle: ${HIKARI_MIN_IDLE:10}
-      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:10000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:5000}
       idle-timeout: ${HIKARI_IDLE_TIMEOUT:300000}
       max-lifetime: ${HIKARI_MAX_LIFETIME:900000}
-      leak-detection-threshold: ${HIKARI_LEAK_DETECTION:30000}
-      pool-name: FigthHikariCP
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION_THRESHOLD:0}
+      validation-timeout: ${HIKARI_VALIDATION_TIMEOUT:3000}
       connection-test-query: SELECT 1
-      validation-timeout: 3000
   jpa:
     show-sql: ${HIBERNATE_SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: ${HIBERNATE_FORMAT_SQL:true}
+        use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:false}
         physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
   cloud:
     openfeign:
@@ -29,6 +29,9 @@ spring:
         config:
           payment-processor:
             url: ${PAYMENT_PROCESSOR_URL}
+            connect-timeout: 3000
+            read-timeout: 5000
+            logger-level: basic
   threads:
     virtual:
       enabled: true
@@ -36,12 +39,28 @@ spring:
 server:
   port: 8080
 
+
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId:-},%X{spanId:-}] - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Configuração Resilience4j condicional
+resilience4j:
+  retry:
+    instances:
+      payment-processor:
+        max-attempts: ${RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${RETRY_WAIT_DURATION:1s}
+        enable-exponential-backoff: ${RETRY_ENABLE_EXPONENTIAL_BACKOFF:true}
+        exponential-backoff-multiplier: ${RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
+        retry-exceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
+          - feign.FeignException
 
 # Configuração do Payment Processor
 payment:
