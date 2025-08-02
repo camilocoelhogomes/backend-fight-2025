@@ -10,13 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "payment-processor")
 public interface PaymentProcessorClient {
 
-  @Retry(name = "payment-processor", fallbackMethod = "processPaymentFallback")
+  @Retry(name = "payment-processor")
   @PostMapping("/payments")
   PaymentProcessorResponseDTO processPayment(@RequestBody PaymentProcessorRequestDTO request);
-
-  // Método fallback que será chamado se retry estiver desabilitado ou falhar
-  default PaymentProcessorResponseDTO processPaymentFallback(PaymentProcessorRequestDTO request, Exception e) {
-    // Retorna uma resposta de erro padrão
-    return new PaymentProcessorResponseDTO("Payment processor unavailable", "FAILED");
-  }
 }

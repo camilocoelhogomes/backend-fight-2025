@@ -1,9 +1,10 @@
 services:
+  # Serviço 1
   figth-1:
     image: spring-native
     container_name: service_1
     restart: unless-stopped
-    environment:
+    environment: &figth-env
       - DB_URL=jdbc:postgresql://postgres:5432/figth_db
       - DB_USER=figth_user
       - DB_PASSWORD=figth_password
@@ -23,7 +24,6 @@ services:
       - RETRY_WAIT_DURATION=1s
       - RETRY_ENABLE_EXPONENTIAL_BACKOFF=true
       - RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER=2
-    # Removido o mapeamento de porta externa - apenas interna
     expose:
       - "8080"
     depends_on:
@@ -36,33 +36,14 @@ services:
       resources:
         limits:
           cpus: 1
-          memory: 1G
+          memory: 190M
 
+  # Serviço 2 - reutiliza as mesmas variáveis de ambiente
   figth-2:
     image: spring-native
     container_name: service_2
     restart: unless-stopped
-    environment:
-      - DB_URL=jdbc:postgresql://postgres:5432/figth_db
-      - DB_USER=figth_user
-      - DB_PASSWORD=figth_password
-      - PAYMENT_PROCESSOR_URL=http://payment-processor-default:8080
-      - LOG_LEVEL=DEBUG
-      - HIBERNATE_SHOW_SQL=false
-      - HIKARI_MAX_POOL_SIZE=20
-      - HIKARI_MIN_IDLE=10
-      - HIKARI_CONNECTION_TIMEOUT=5000
-      - HIKARI_IDLE_TIMEOUT=300000
-      - HIKARI_MAX_LIFETIME=900000
-      - HIKARI_LEAK_DETECTION=30000
-      - HIBERNATE_FORMAT_SQL=true
-      - HIBERNATE_USE_SQL_COMMENTS=false
-      # Configurações de Retry Resilience4j
-      - RETRY_MAX_ATTEMPTS=3
-      - RETRY_WAIT_DURATION=1s
-      - RETRY_ENABLE_EXPONENTIAL_BACKOFF=true
-      - RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER=2
-    # Removido o mapeamento de porta externa - apenas interna
+    environment: *figth-env  # Reutiliza as mesmas variáveis
     expose:
       - "8080"
     depends_on:
@@ -75,7 +56,8 @@ services:
       resources:
         limits:
           cpus: 1
-          memory: 1G
+          memory: 190M
+
   nginx:
     image: nginx:alpine
     container_name: figth-nginx
@@ -92,8 +74,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
-          memory: 1G
+          cpus: 0.3
+          memory: 10M
+
   postgres:
     image: postgres:17-alpine
     container_name: figth-postgres
@@ -119,8 +102,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
-          memory: 1G
+          cpus: 0.6
+          memory: 140M
+
 volumes:
   portainer_data:
   postgres_data:

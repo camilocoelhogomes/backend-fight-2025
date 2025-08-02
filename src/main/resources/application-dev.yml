@@ -1,24 +1,67 @@
 # Configurações específicas para desenvolvimento/debug
 spring:
+  application:
+    name: figth
   datasource:
     url: jdbc:postgresql://localhost:5432/figth_db
     username: figth_user
     password: figth_password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 5000
+      idle-timeout: 300000
+      max-lifetime: 900000
+      leak-detection-threshold: 0
+      validation-timeout: 3000
+      connection-test-query: SELECT 1
   jpa:
     show-sql: true
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         use_sql_comments: true
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  cloud:
+    openfeign:
+      client:
+        config:
+          payment-processor:
+            url: http://localhost:8001
+            connect-timeout: 3000
+            read-timeout: 5000
+            logger-level: basic
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8080
 
 logging:
   level:
+    root: INFO
     com.backend.figth: DEBUG
     org.springframework.web: DEBUG
     org.springframework.cloud.openfeign: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Configuração Resilience4j para desenvolvimento
+resilience4j:
+  retry:
+    instances:
+      payment-processor:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.lang.Exception
 
 # Configuração do Payment Processor para desenvolvimento
 payment:
