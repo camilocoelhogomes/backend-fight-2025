@@ -55,7 +55,7 @@ public class PaymentService {
 			Payment payment = new Payment();
 			payment.setCorrelationId(UUID.fromString(request.getCorrelationId()));
 			payment.setAmount(request.getAmount());
-			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.systemDefault()));
+			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
 			payment.setPaymentService("D");
 
 			// Usar thread pool para persistência
@@ -93,7 +93,7 @@ public class PaymentService {
 			dlqEntry.setAmount(request.getAmount());
 			dlqEntry.setPartitionKey(1);
 			dlqEntry.setProcessed(false);
-			dlqEntry.setCreatedAt(LocalDateTime.ofInstant(requestTime, ZoneId.systemDefault()));
+			dlqEntry.setCreatedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
 
 			// Usar thread pool para DLQ
 			CompletableFuture<PaymentDLQ> dlqFuture = paymentPersistenceService.persistPaymentDLQ(dlqEntry);

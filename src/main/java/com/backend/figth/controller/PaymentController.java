@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ExecutionException;
 
 @RestController
-@RequestMapping("/payments")
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentController {
@@ -29,7 +29,7 @@ public class PaymentController {
   private final PaymentService paymentService;
   private final PaymentSummaryService paymentSummaryService;
 
-  @PostMapping
+  @PostMapping("/payments")
   public ResponseEntity<PaymentResponseDTO> createPayment(
       @RequestBody PaymentRequestDTO request) {
     log.info("Received payment request with correlationId: {}", request.getCorrelationId());
@@ -42,14 +42,15 @@ public class PaymentController {
         .body(new PaymentResponseDTO("Payment request accepted for processing", "ACCEPTED"));
   }
 
-  @GetMapping("/summary")
+  @GetMapping("/payments-summary")
   public ResponseEntity<PaymentSummaryResponseDTO> getPaymentSummary(
       @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
-      @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+      @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to)
+      throws InterruptedException, ExecutionException {
 
     log.info("Getting payment summary from {} to {}", from, to);
 
-    PaymentSummaryResponseDTO summary = paymentSummaryService.getPaymentSummary(from, to);
+    PaymentSummaryResponseDTO summary = paymentSummaryService.getPaymentSummary(from, to).get();
 
     return ResponseEntity.ok(summary);
   }

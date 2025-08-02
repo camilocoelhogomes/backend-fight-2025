@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -22,22 +23,27 @@ public class PaymentSummaryService {
   private final PaymentRepository paymentRepository;
 
   @Async("dbExecutor")
-  public PaymentSummaryResponseDTO getPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
-    log.info("Getting payment summary from {} to {}", fromDate, toDate);
+  public CompletableFuture<PaymentSummaryResponseDTO> getPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
+    try {
+      log.info("Getting payment summary from {} to {}", fromDate, toDate);
 
-    List<PaymentSummaryQueryDTO> results = paymentRepository.getPaymentSummaryByDateRange(fromDate, toDate);
+      List<PaymentSummaryQueryDTO> results = paymentRepository.getPaymentSummaryByDateRange(fromDate, toDate);
 
-    PaymentSummaryDTO defaultService = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
-    PaymentSummaryDTO fallback = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
+      PaymentSummaryDTO defaultService = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
+      PaymentSummaryDTO fallback = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
 
-    for (PaymentSummaryQueryDTO result : results) {
-      if ("D".equals(result.getPaymentService())) {
-        defaultService = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
-      } else if ("F".equals(result.getPaymentService())) {
-        fallback = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
+      for (PaymentSummaryQueryDTO result : results) {
+        if ('D' == result.getPaymentService()) {
+          defaultService = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
+        } else if ('F' == result.getPaymentService()) {
+          fallback = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
+        }
       }
-    }
 
-    return new PaymentSummaryResponseDTO(defaultService, fallback);
+      return CompletableFuture.completedFuture(new PaymentSummaryResponseDTO(defaultService, fallback));
+    } catch (Exception e) {
+      log.error("Error getting payment summary from {} to {}", fromDate, toDate, e);
+      throw e;
+    }
   }
 }

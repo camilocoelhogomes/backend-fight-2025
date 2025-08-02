@@ -13,10 +13,7 @@ import java.util.List;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    @Query("SELECT new com.backend.figth.dto.PaymentSummaryQueryDTO(p.paymentService, COUNT(p), SUM(p.amount)) " +
-            "FROM Payment p " +
-            "WHERE p.requestedAt BETWEEN :fromDate AND :toDate " +
-            "GROUP BY p.paymentService")
-    List<PaymentSummaryQueryDTO> getPaymentSummaryByDateRange(@Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate") LocalDateTime toDate);
+        @Query(value = "SELECT p.payment_service, COUNT(p.id) as total_requests, SUM(p.amount) as total_amount FROM payments p WHERE p.requested_at BETWEEN :fromDate AND :toDate GROUP BY p.payment_service", nativeQuery = true)
+        List<PaymentSummaryQueryDTO> getPaymentSummaryByDateRange(@Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate);
 }
