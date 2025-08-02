@@ -29,7 +29,10 @@ spring:
         config:
           payment-processor:
             url: ${PAYMENT_PROCESSOR_URL}
-
+  threads:
+    virtual:
+      enabled: true
+      
 server:
   port: 8080
 

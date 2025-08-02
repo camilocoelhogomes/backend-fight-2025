@@ -17,6 +17,10 @@ import java.util.UUID;
 public class Payment {
 
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
+  private Long id;
+
   @Column(name = "correlationid", nullable = false)
   private UUID correlationId;
 
