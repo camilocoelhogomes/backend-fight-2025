@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
+import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -43,8 +43,7 @@ public class PaymentService {
 
 			log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
 			// Passo 2: Chamar payment processor (virtual thread - I/O não-bloqueante)
-			PaymentProcessorResponseDTO processorResponse = paymentProcessorClient
-					.processPayment(processorRequest);
+			PaymentProcessorResponseDTO processorResponse = callPaymentProcessor(processorRequest);
 
 			log.info("Payment processor response received for correlationId: {} - Message: {}",
 					request.getCorrelationId(), processorResponse.getMessage());
@@ -82,6 +81,11 @@ public class PaymentService {
 
 			return CompletableFuture.completedFuture(new PaymentResponseDTO(e.getMessage(), "FAILED"));
 		}
+	}
+
+	@Retry(name = "payment-processor")
+	public PaymentProcessorResponseDTO callPaymentProcessor(PaymentProcessorRequestDTO request) {
+		return paymentProcessorClient.processPayment(request);
 	}
 
 	private void saveToDLQ(PaymentRequestDTO request, Instant requestTime, Exception error) {
