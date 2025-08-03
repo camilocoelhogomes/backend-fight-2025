@@ -21,6 +21,15 @@
     "allPublicMethods": true
   },
   {
+    "name": "com.backend.figth.dto.PaymentSummaryQueryDTO",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+  {
     "name": "org.springframework.cloud.openfeign.FeignClient",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,

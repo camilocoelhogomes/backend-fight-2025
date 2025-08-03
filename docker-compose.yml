@@ -20,11 +20,6 @@ services:
       - HIBERNATE_SHOW_SQL=false
       - HIBERNATE_FORMAT_SQL=true
       - HIBERNATE_USE_SQL_COMMENTS=false
-      # Configurações de Retry Resilience4j
-      - RETRY_MAX_ATTEMPTS=3
-      - RETRY_WAIT_DURATION=1s
-      - RETRY_ENABLE_EXPONENTIAL_BACKOFF=true
-      - RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER=2
     expose:
       - "8080"
     depends_on:
@@ -37,7 +32,7 @@ services:
       resources:
         limits:
           cpus: 0.4
-          memory: 500M
+          memory: 100M
 
   # Serviço 2 - reutiliza as mesmas variáveis de ambiente
   figth-2:
@@ -57,7 +52,7 @@ services:
       resources:
         limits:
           cpus: 0.4
-          memory: 500M
+          memory: 100M
 
   nginx:
     image: nginx:alpine
