@@ -22,13 +22,18 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: ${HIBERNATE_FORMAT_SQL:true}
         use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:false}
-        physical_naming_strategy: org.hibernatex.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
   cloud:
     openfeign:
       client:
         config:
           payment-processor:
             url: ${PAYMENT_PROCESSOR_URL}
+            connect-timeout: 3000
+            read-timeout: 5000
+            logger-level: basic
+          payment-processor-fallback:
+            url: ${PAYMENT_PROCESSOR_FALLBACK_URL}
             connect-timeout: 3000
             read-timeout: 5000
             logger-level: basic
@@ -49,5 +54,8 @@ logging:
 payment:
   processor:
     url: ${PAYMENT_PROCESSOR_URL}
+  processor-fallback:
+    url: ${PAYMENT_PROCESSOR_FALLBACK_URL}
+
 retry:
   max-attempts: ${RETRY_MAX_ATTEMPTS:3}

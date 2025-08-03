@@ -33,6 +33,11 @@ spring:
             connect-timeout: 3000
             read-timeout: 5000
             logger-level: basic
+          payment-processor-fallback:
+            url: http://localhost:8002
+            connect-timeout: 3000
+            read-timeout: 5000
+            logger-level: basic
   threads:
     virtual:
       enabled: true
@@ -54,7 +59,9 @@ logging:
 # Configuração do Payment Processor para desenvolvimento
 payment:
   processor:
-    url: http://localhost:8001 
+    url: http://localhost:8001
+  processor-fallback:
+    url: http://localhost:8002
 
 retry:
   max-attempts: 3

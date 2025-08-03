@@ -1,6 +1,7 @@
 package com.backend.figth.service;
 
 import com.backend.figth.client.PaymentProcessorClient;
+import com.backend.figth.client.PaymentProcessorFallbackClient;
 import com.backend.figth.dto.PaymentProcessorRequestDTO;
 import com.backend.figth.dto.PaymentProcessorResponseDTO;
 import com.backend.figth.dto.PaymentRequestDTO;
@@ -11,11 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +28,7 @@ public class PaymentService {
 
 	private final PaymentProcessorClient paymentProcessorClient;
 	private final PaymentPersistenceService paymentPersistenceService;
-	private final RetryService retryService;
+	private final PaymentProcessorFallbackClient paymentProcessorFallbackClient;
 
 	@Async("taskExecutor") // Virtual threads para I/O não-bloqueante
 	public CompletableFuture<PaymentResponseDTO> processPaymentAsync(PaymentRequestDTO request) {
@@ -34,8 +36,7 @@ public class PaymentService {
 				request.getCorrelationId(), request.getAmount());
 
 		try {
-			Callable<Payment> callable = () -> processPayment(request, "D");
-			Payment payment = this.retryService.retry(callable);
+			Payment payment = processPayment(request);
 
 			log.info("Payment processed successfully for correlationId: {}", request.getCorrelationId());
 
@@ -65,32 +66,33 @@ public class PaymentService {
 		}
 	}
 
-	public Payment processPayment(PaymentRequestDTO request, String paymentService) {
+	public Payment processPayment(PaymentRequestDTO request) {
+		var paymentService = "D";
 		// Gerar nova data a cada tentativa
 		log.info("=== Processing payment for correlationId: {} ===",
 				request.getCorrelationId());
+		PaymentProcessorResponseDTO processorResponse = null;
+		Instant requestTime = null;
+		try {
+			requestTime = Instant.now();
+			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+					request.getCorrelationId(),
+					request.getAmount(),
+					requestTime);
 
-		if (request.getCorrelationId().equals("teste")) {
-			log.error("=== THROWING EXCEPTION for correlationId: {} ===", request.getCorrelationId());
-			throw new RuntimeException(
-					"Error during async payment processing for correlationId: " + request.getCorrelationId());
+			log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
+
+			// Passo 2: Chamar payment processor
+			processorResponse = paymentProcessorClient.processPayment(processorRequest);
+		} catch (Exception e) {
+			requestTime = Instant.now();
+			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+					request.getCorrelationId(),
+					request.getAmount(),
+					requestTime);
+			paymentService = "F";
+			processorResponse = paymentProcessorFallbackClient.processPayment(processorRequest);
 		}
-
-		var requestTime = Instant.now();
-
-		log.info("Processing payment for correlationId: {} at time: {}",
-				request.getCorrelationId(), requestTime);
-
-		// Passo 1: Criar requisição para o payment processor
-		PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
-				request.getCorrelationId(),
-				request.getAmount(),
-				requestTime);
-
-		log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
-
-		// Passo 2: Chamar payment processor
-		PaymentProcessorResponseDTO processorResponse = paymentProcessorClient.processPayment(processorRequest);
 
 		log.info("Payment processor response received for correlationId: {} - Message: {}",
 				request.getCorrelationId(), processorResponse.getMessage());
