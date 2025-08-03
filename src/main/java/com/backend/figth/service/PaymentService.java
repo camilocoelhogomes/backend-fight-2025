@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -32,36 +31,17 @@ public class PaymentService {
 		log.info("Starting async payment processing for correlationId: {} and amount: {}",
 				request.getCorrelationId(), request.getAmount());
 
-		var requestTime = Instant.now();
-
 		try {
-			// Passo 1: Criar requisição para o payment processor
-			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
-					request.getCorrelationId(),
-					request.getAmount(),
-					requestTime);
+			// Passo 1: Processar payment (gera nova data a cada tentativa)
+			Payment payment = processPayment(request, "D");
 
-			log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
-			// Passo 2: Chamar payment processor (virtual thread - I/O não-bloqueante)
-			PaymentProcessorResponseDTO processorResponse = callPaymentProcessor(processorRequest);
+			log.info("Payment processed successfully for correlationId: {}", request.getCorrelationId());
 
-			log.info("Payment processor response received for correlationId: {} - Message: {}",
-					request.getCorrelationId(), processorResponse.getMessage());
-
-			// Passo 3: Persistir no banco de dados (thread pool - I/O bloqueante)
+			// Passo 2: Persistir no banco de dados (thread pool - I/O bloqueante)
 			log.info("Saving payment to database for correlationId: {}", request.getCorrelationId());
 
-			Payment payment = new Payment();
-			payment.setCorrelationId(UUID.fromString(request.getCorrelationId()));
-			payment.setAmount(request.getAmount());
-			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
-			payment.setPaymentService("D");
-
 			// Usar thread pool para persistência
-			CompletableFuture<Payment> persistenceFuture = paymentPersistenceService.persistPayment(payment);
-
-			// Aguardar persistência com timeout
-			Payment savedPayment = persistenceFuture.get(10, TimeUnit.SECONDS);
+			paymentPersistenceService.persistPayment(payment).get();
 
 			log.info("Payment successfully saved to database for correlationId: {}",
 					request.getCorrelationId());
@@ -69,7 +49,7 @@ public class PaymentService {
 			log.info("Async payment processing completed successfully for correlationId: {}",
 					request.getCorrelationId());
 
-			return CompletableFuture.completedFuture(new PaymentResponseDTO(processorResponse.getMessage(),
+			return CompletableFuture.completedFuture(new PaymentResponseDTO("Payment processed successfully",
 					"SUCCESS"));
 
 		} catch (Exception e) {
@@ -77,15 +57,53 @@ public class PaymentService {
 					request.getCorrelationId(), e);
 
 			// Capturar falha na DLQ usando thread pool
-			saveToDLQ(request, requestTime, e);
+			saveToDLQ(request, Instant.now(), e);
 
 			return CompletableFuture.completedFuture(new PaymentResponseDTO(e.getMessage(), "FAILED"));
 		}
 	}
 
-	@Retry(name = "payment-processor")
-	public PaymentProcessorResponseDTO callPaymentProcessor(PaymentProcessorRequestDTO request) {
-		return paymentProcessorClient.processPayment(request);
+	public Payment processPayment(PaymentRequestDTO request, String paymentService) {
+		// Gerar nova data a cada tentativa
+		log.info("=== Processing payment for correlationId: {} ===",
+				request.getCorrelationId());
+
+		if (request.getCorrelationId().equals("teste")) {
+			log.error("=== THROWING EXCEPTION for correlationId: {} ===", request.getCorrelationId());
+			throw new RuntimeException(
+					"Error during async payment processing for correlationId: " + request.getCorrelationId());
+		}
+
+		var requestTime = Instant.now();
+
+		log.info("Processing payment for correlationId: {} at time: {}",
+				request.getCorrelationId(), requestTime);
+
+		// Passo 1: Criar requisição para o payment processor
+		PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+				request.getCorrelationId(),
+				request.getAmount(),
+				requestTime);
+
+		log.info("Calling payment processor for correlationId: {}", request.getCorrelationId());
+
+		// Passo 2: Chamar payment processor
+		PaymentProcessorResponseDTO processorResponse = paymentProcessorClient.processPayment(processorRequest);
+
+		log.info("Payment processor response received for correlationId: {} - Message: {}",
+				request.getCorrelationId(), processorResponse.getMessage());
+
+		// Passo 3: Criar entidade Payment com a data atual da tentativa
+		Payment payment = new Payment();
+		payment.setCorrelationId(UUID.fromString(request.getCorrelationId()));
+		payment.setAmount(request.getAmount());
+		payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
+		payment.setPaymentService(paymentService);
+
+		log.info("Payment entity created for correlationId: {} with timestamp: {}",
+				request.getCorrelationId(), payment.getRequestedAt());
+
+		return payment;
 	}
 
 	private void saveToDLQ(PaymentRequestDTO request, Instant requestTime, Exception error) {
@@ -93,7 +111,17 @@ public class PaymentService {
 			log.info("Saving failed payment to DLQ for correlationId: {}", request.getCorrelationId());
 
 			PaymentDLQ dlqEntry = new PaymentDLQ();
-			dlqEntry.setCorrelationId(UUID.fromString(request.getCorrelationId()));
+
+			// Corrigir UUID inválido
+			try {
+				dlqEntry.setCorrelationId(UUID.fromString(request.getCorrelationId()));
+			} catch (IllegalArgumentException e) {
+				// Se UUID inválido, usar UUID aleatório
+				dlqEntry.setCorrelationId(UUID.randomUUID());
+				log.warn("Invalid UUID '{}', using random UUID: {}",
+						request.getCorrelationId(), dlqEntry.getCorrelationId());
+			}
+
 			dlqEntry.setAmount(request.getAmount());
 			dlqEntry.setPartitionKey(1);
 			dlqEntry.setProcessed(false);

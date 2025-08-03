@@ -22,7 +22,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: ${HIBERNATE_FORMAT_SQL:true}
         use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:false}
-        physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        physical_naming_strategy: org.hibernatex.boot.model.naming.PhysicalNamingStrategyStandardImpl
   cloud:
     openfeign:
       client:
@@ -39,24 +39,11 @@ spring:
 server:
   port: 8080
 
-
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# Configuração Resilience4j condicional
-resilience4j:
-  retry:
-    instances:
-      payment-processor:
-        max-attempts: ${RETRY_MAX_ATTEMPTS:3}
-        wait-duration: ${RETRY_WAIT_DURATION:1s}
-        enable-exponential-backoff: ${RETRY_ENABLE_EXPONENTIAL_BACKOFF:true}
-        exponential-backoff-multiplier: ${RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
-        retry-exceptions:
-          - java.lang.Exception
 
 # Configuração do Payment Processor
 payment:

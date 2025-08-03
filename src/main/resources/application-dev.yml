@@ -51,18 +51,6 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# Configuração Resilience4j para desenvolvimento
-resilience4j:
-  retry:
-    instances:
-      payment-processor:
-        max-attempts: 3
-        wait-duration: 1s
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-        retry-exceptions:
-          - java.lang.Exception
-
 # Configuração do Payment Processor para desenvolvimento
 payment:
   processor:

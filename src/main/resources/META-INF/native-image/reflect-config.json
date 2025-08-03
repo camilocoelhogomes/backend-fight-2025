@@ -21,27 +21,6 @@
     "allPublicMethods": true
   },
   {
-    "name": "io.github.resilience4j.retry.annotation.Retry",
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true
-  },
-  {
-    "name": "io.github.resilience4j.retry.RetryConfig",
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true
-  },
-  {
-    "name": "io.github.resilience4j.retry.Retry",
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true
-  },
-  {
     "name": "org.springframework.cloud.openfeign.FeignClient",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
@@ -96,13 +75,6 @@
   },
   {
     "name": "org.postgresql.ds.PGSimpleDataSource",
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true
-  },
-  {
-    "name": "com.backend.figth.dto.PaymentSummaryQueryDTO",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
