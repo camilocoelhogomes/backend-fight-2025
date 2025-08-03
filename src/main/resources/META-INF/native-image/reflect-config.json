@@ -100,5 +100,12 @@
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
     "allPublicMethods": true
+  },
+  {
+    "name": "com.backend.figth.dto.PaymentSummaryQueryDTO",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
   }
 ]

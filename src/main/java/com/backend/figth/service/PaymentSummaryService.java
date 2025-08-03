@@ -22,7 +22,7 @@ public class PaymentSummaryService {
 
   private final PaymentRepository paymentRepository;
 
-  @Async("dbExecutorReader")
+  @Async("dbExecutor")
   public CompletableFuture<PaymentSummaryResponseDTO> getPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
     try {
       log.info("Getting payment summary from {} to {}", fromDate, toDate);
@@ -33,10 +33,10 @@ public class PaymentSummaryService {
       PaymentSummaryDTO fallback = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
 
       for (PaymentSummaryQueryDTO result : results) {
-        if ('D' == result.getPaymentService()) {
-          defaultService = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
-        } else if ('F' == result.getPaymentService()) {
-          fallback = new PaymentSummaryDTO(result.getTotalRequests(), result.getTotalAmount());
+        if ('D' == result.paymentService()) {
+          defaultService = new PaymentSummaryDTO(result.totalRequests(), result.totalAmount());
+        } else if ('F' == result.paymentService()) {
+          fallback = new PaymentSummaryDTO(result.totalRequests(), result.totalAmount());
         }
       }
 

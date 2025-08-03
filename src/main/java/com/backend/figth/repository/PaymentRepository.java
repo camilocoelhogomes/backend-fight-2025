@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-        @Query(value = "SELECT p.payment_service, COUNT(p.id) as total_requests, SUM(p.amount) as total_amount FROM payments p WHERE p.requested_at BETWEEN :fromDate AND :toDate GROUP BY p.payment_service", nativeQuery = true)
+        @Query(value = "SELECT p.payment_service as paymentService, COUNT(p.id) as totalRequests, SUM(p.amount) as totalAmount FROM payments p WHERE p.requested_at BETWEEN :fromDate AND :toDate GROUP BY p.payment_service", nativeQuery = true)
         List<PaymentSummaryQueryDTO> getPaymentSummaryByDateRange(@Param("fromDate") LocalDateTime fromDate,
                         @Param("toDate") LocalDateTime toDate);
 }

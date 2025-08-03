@@ -35,8 +35,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
-          memory: 190M
+          cpus: 0.4
+          memory: 100M
 
   # Serviço 2 - reutiliza as mesmas variáveis de ambiente
   figth-2:
@@ -55,8 +55,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 1
-          memory: 190M
+          cpus: 0.4
+          memory: 100M
 
   nginx:
     image: nginx:alpine
@@ -74,7 +74,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: 0.3
+          cpus: 0.1
           memory: 10M
 
   postgres:
