@@ -55,3 +55,6 @@ logging:
 payment:
   processor:
     url: http://localhost:8001 
+
+retry:
+  max-attempts: 3

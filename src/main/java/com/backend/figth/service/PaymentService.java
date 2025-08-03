@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +26,7 @@ public class PaymentService {
 
 	private final PaymentProcessorClient paymentProcessorClient;
 	private final PaymentPersistenceService paymentPersistenceService;
+	private final RetryService retryService;
 
 	@Async("taskExecutor") // Virtual threads para I/O não-bloqueante
 	public CompletableFuture<PaymentResponseDTO> processPaymentAsync(PaymentRequestDTO request) {
@@ -32,8 +34,8 @@ public class PaymentService {
 				request.getCorrelationId(), request.getAmount());
 
 		try {
-			// Passo 1: Processar payment (gera nova data a cada tentativa)
-			Payment payment = processPayment(request, "D");
+			Callable<Payment> callable = () -> processPayment(request, "D");
+			Payment payment = this.retryService.retry(callable);
 
 			log.info("Payment processed successfully for correlationId: {}", request.getCorrelationId());
 

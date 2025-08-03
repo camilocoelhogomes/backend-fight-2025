@@ -49,3 +49,5 @@ logging:
 payment:
   processor:
     url: ${PAYMENT_PROCESSOR_URL}
+retry:
+  max-attempts: ${RETRY_MAX_ATTEMPTS:3}
