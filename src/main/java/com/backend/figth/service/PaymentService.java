@@ -2,6 +2,7 @@ package com.backend.figth.service;
 
 import com.backend.figth.client.PaymentProcessorClient;
 import com.backend.figth.client.PaymentProcessorFallbackClient;
+import com.backend.figth.dto.PaymentBatchProcessorDTO;
 import com.backend.figth.dto.PaymentProcessorRequestDTO;
 import com.backend.figth.dto.PaymentProcessorResponseDTO;
 import com.backend.figth.dto.PaymentRequestDTO;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -126,5 +128,63 @@ public class PaymentService {
 			log.error("Failed to save payment to DLQ for correlationId: {}",
 					request.getCorrelationId(), dlqError);
 		}
+	}
+
+	@Async("taskExecutor")
+	public CompletableFuture<PaymentBatchProcessorDTO> processPayment(PaymentQueue paymentQueue) {
+		PaymentBatchProcessorDTO paymentBatchProcessorDTO = new PaymentBatchProcessorDTO();
+		paymentBatchProcessorDTO.setPaymentQueue(paymentQueue);
+		try {
+			var requestTime = Instant.now();
+			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+					paymentQueue.getStoredData().getCorrelationId(),
+					paymentQueue.getStoredData().getAmount(),
+					requestTime);
+
+			log.info("Calling payment processor for correlationId: {}",
+					paymentQueue.getStoredData().getCorrelationId());
+
+			// Passo 2: Chamar payment processor
+			var processorResponse = paymentProcessorClient.processPayment(processorRequest);
+			Payment payment = new Payment();
+			payment.setCorrelationId(UUID.fromString(paymentQueue.getStoredData().getCorrelationId()));
+			payment.setAmount(paymentQueue.getStoredData().getAmount());
+			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
+			payment.setPaymentService("D");
+
+			paymentBatchProcessorDTO.setPayment(payment);
+		} catch (Exception e) {
+			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
+		}
+		return CompletableFuture.completedFuture(paymentBatchProcessorDTO);
+	}
+
+	@Async("taskExecutor")
+	public CompletableFuture<PaymentBatchProcessorDTO> processPaymentFallback(PaymentQueue paymentQueue) {
+		PaymentBatchProcessorDTO paymentBatchProcessorDTO = new PaymentBatchProcessorDTO();
+		paymentBatchProcessorDTO.setPaymentQueue(paymentQueue);
+		try {
+			var requestTime = Instant.now();
+			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+					paymentQueue.getStoredData().getCorrelationId(),
+					paymentQueue.getStoredData().getAmount(),
+					requestTime);
+
+			log.info("Calling payment processor for correlationId: {}",
+					paymentQueue.getStoredData().getCorrelationId());
+
+			// Passo 2: Chamar payment processor
+			var processorResponse = paymentProcessorFallbackClient.processPayment(processorRequest);
+			Payment payment = new Payment();
+			payment.setCorrelationId(UUID.fromString(paymentQueue.getStoredData().getCorrelationId()));
+			payment.setAmount(paymentQueue.getStoredData().getAmount());
+			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
+			payment.setPaymentService("F");
+
+			paymentBatchProcessorDTO.setPayment(payment);
+		} catch (Exception e) {
+			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
+		}
+		return CompletableFuture.completedFuture(paymentBatchProcessorDTO);
 	}
 }
