@@ -6,12 +6,9 @@ CREATE UNLOGGED TABLE payments (
     payment_service VARCHAR(1) NOT NULL
 );
 
-CREATE UNLOGGED TABLE payment_dlq (
+CREATE UNLOGGED TABLE payment_queue (
     id SERIAL PRIMARY KEY,
-    correlationid UUID NOT NULL,
-    amount DECIMAL NOT NULL,
-    partition_key INTEGER NOT NULL,
-    processed BOOLEAN NOT NULL DEFAULT FALSE,
+    stored_data JSONB NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

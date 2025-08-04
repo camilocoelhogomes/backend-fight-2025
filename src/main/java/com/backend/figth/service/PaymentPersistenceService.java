@@ -6,8 +6,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.backend.figth.entity.Payment;
-import com.backend.figth.entity.PaymentDLQ;
-import com.backend.figth.repository.PaymentDLQRepository;
+import com.backend.figth.entity.PaymentQueue;
+import com.backend.figth.repository.PaymentQueueRepository;
 import com.backend.figth.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PaymentPersistenceService {
 
   private final PaymentRepository paymentRepository;
-  private final PaymentDLQRepository paymentDLQRepository;
+  private final PaymentQueueRepository paymentQueueRepository;
 
   @Async("dbExecutor")
   public CompletableFuture<Payment> persistPayment(Payment payment) {
@@ -36,15 +36,14 @@ public class PaymentPersistenceService {
   }
 
   @Async("dbExecutor")
-  public CompletableFuture<PaymentDLQ> persistPaymentDLQ(PaymentDLQ payment) {
-    log.debug("Persisting DLQ payment with correlationId: {}", payment.getCorrelationId());
+  public CompletableFuture<PaymentQueue> persistPaymentQueue(PaymentQueue payment) {
 
     try {
-      PaymentDLQ savedPayment = paymentDLQRepository.save(payment);
-      log.debug("DLQ payment persisted successfully: {}", savedPayment.getCorrelationId());
+      PaymentQueue savedPayment = paymentQueueRepository.save(payment);
+      log.debug("DLQ payment persisted successfully: {}", savedPayment.getId());
       return CompletableFuture.completedFuture(savedPayment);
     } catch (Exception e) {
-      log.error("Error persisting DLQ payment: {}", payment.getCorrelationId(), e);
+      log.error("Error persisting DLQ payment: {}", payment.getId(), e);
       return CompletableFuture.failedFuture(e);
     }
   }

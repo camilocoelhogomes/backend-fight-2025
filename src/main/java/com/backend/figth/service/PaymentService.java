@@ -7,7 +7,8 @@ import com.backend.figth.dto.PaymentProcessorResponseDTO;
 import com.backend.figth.dto.PaymentRequestDTO;
 import com.backend.figth.dto.PaymentResponseDTO;
 import com.backend.figth.entity.Payment;
-import com.backend.figth.entity.PaymentDLQ;
+import com.backend.figth.entity.PaymentQueue;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -113,26 +114,10 @@ public class PaymentService {
 	private void saveToDLQ(PaymentRequestDTO request, Instant requestTime, Exception error) {
 		try {
 			log.info("Saving failed payment to DLQ for correlationId: {}", request.getCorrelationId());
-
-			PaymentDLQ dlqEntry = new PaymentDLQ();
-
-			// Corrigir UUID inválido
-			try {
-				dlqEntry.setCorrelationId(UUID.fromString(request.getCorrelationId()));
-			} catch (IllegalArgumentException e) {
-				// Se UUID inválido, usar UUID aleatório
-				dlqEntry.setCorrelationId(UUID.randomUUID());
-				log.warn("Invalid UUID '{}', using random UUID: {}",
-						request.getCorrelationId(), dlqEntry.getCorrelationId());
-			}
-
-			dlqEntry.setAmount(request.getAmount());
-			dlqEntry.setPartitionKey(1);
-			dlqEntry.setProcessed(false);
-			dlqEntry.setCreatedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
-
+			var paymentQueue = new PaymentQueue();
+			paymentQueue.setStoredData(request);
 			// Usar thread pool para DLQ
-			CompletableFuture<PaymentDLQ> dlqFuture = paymentPersistenceService.persistPaymentDLQ(dlqEntry);
+			var dlqFuture = paymentPersistenceService.persistPaymentQueue(paymentQueue);
 			dlqFuture.get(5, TimeUnit.SECONDS); // Timeout para DLQ
 
 			log.info("Failed payment successfully saved to DLQ for correlationId: {}",
