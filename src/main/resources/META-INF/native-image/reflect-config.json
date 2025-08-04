@@ -39,7 +39,7 @@
     "allPublicFields": true
   },
   {
-    "name": "com.backend.figth.entity.PaymentQueue$PaymentData",
+    "name": "com.backend.figth.dto.PaymentRequestDTO",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,

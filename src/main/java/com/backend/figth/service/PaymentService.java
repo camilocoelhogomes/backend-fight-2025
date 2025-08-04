@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -61,7 +60,7 @@ public class PaymentService {
 					request.getCorrelationId(), e);
 
 			// Capturar falha na DLQ usando thread pool
-			saveToDLQ(request, Instant.now(), e);
+			saveToQueue(request);
 
 			return CompletableFuture.completedFuture(new PaymentResponseDTO(e.getMessage(), "FAILED"));
 		}
@@ -111,11 +110,12 @@ public class PaymentService {
 		return payment;
 	}
 
-	private void saveToDLQ(PaymentRequestDTO request, Instant requestTime, Exception error) {
+	public void saveToQueue(PaymentRequestDTO request) {
 		try {
 			log.info("Saving failed payment to DLQ for correlationId: {}", request.getCorrelationId());
 			var paymentQueue = new PaymentQueue();
 			paymentQueue.setStoredData(request);
+			paymentQueue.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
 			// Usar thread pool para DLQ
 			var dlqFuture = paymentPersistenceService.persistPaymentQueue(paymentQueue);
 			dlqFuture.get(5, TimeUnit.SECONDS); // Timeout para DLQ

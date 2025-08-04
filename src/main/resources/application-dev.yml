@@ -65,3 +65,6 @@ payment:
 
 retry:
   max-attempts: 3
+
+process:
+  strategy: queue
