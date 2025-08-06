@@ -86,6 +86,17 @@ public class PaymentService {
 
 			// Passo 2: Chamar payment processor
 			processorResponse = paymentProcessorClient.processPayment(processorRequest);
+			// Passo 3: Criar entidade Payment com a data atual da tentativa
+			Payment payment = new Payment();
+			payment.setCorrelationId(UUID.fromString(request.getCorrelationId()));
+			payment.setAmount(request.getAmount());
+			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
+			payment.setPaymentService(paymentService);
+
+			log.info("Payment entity created for correlationId: {} with timestamp: {}",
+					request.getCorrelationId(), payment.getRequestedAt());
+
+			return payment;
 		} catch (Exception e) {
 			requestTime = Instant.now();
 			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
@@ -95,10 +106,6 @@ public class PaymentService {
 			paymentService = "F";
 			processorResponse = paymentProcessorFallbackClient.processPayment(processorRequest);
 		}
-
-		log.info("Payment processor response received for correlationId: {} - Message: {}",
-				request.getCorrelationId(), processorResponse.getMessage());
-
 		// Passo 3: Criar entidade Payment com a data atual da tentativa
 		Payment payment = new Payment();
 		payment.setCorrelationId(UUID.fromString(request.getCorrelationId()));
@@ -108,8 +115,11 @@ public class PaymentService {
 
 		log.info("Payment entity created for correlationId: {} with timestamp: {}",
 				request.getCorrelationId(), payment.getRequestedAt());
+		log.info("Payment processor response received for correlationId: {} - Message: {}",
+				request.getCorrelationId(), processorResponse.getMessage());
 
 		return payment;
+
 	}
 
 	public void saveToQueue(PaymentRequestDTO request) {
