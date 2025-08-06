@@ -67,4 +67,4 @@ retry:
   max-attempts: 3
 
 process:
-  strategy: queue
+  strategy: default
