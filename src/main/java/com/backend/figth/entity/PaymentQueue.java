@@ -30,6 +30,7 @@ public class PaymentQueue {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
-  // Classe interna para os dados do pagamento
+  @Column(name = "queue_status", nullable = false)
+  private String queueStatus;
 
 }

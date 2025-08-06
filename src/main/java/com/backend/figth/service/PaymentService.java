@@ -124,11 +124,11 @@ public class PaymentService {
 
 	public void saveToQueue(PaymentRequestDTO request) {
 		try {
-			log.info("Saving failed payment to DLQ for correlationId: {}", request.getCorrelationId());
+			log.info("Saving payment to queue for correlationId: {}", request.getCorrelationId());
 			var paymentQueue = new PaymentQueue();
 			paymentQueue.setStoredData(request);
 			paymentQueue.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
-			// Usar thread pool para DLQ
+			paymentQueue.setQueueStatus("Q");
 			var dlqFuture = paymentPersistenceService.persistPaymentQueue(paymentQueue);
 			dlqFuture.get(5, TimeUnit.SECONDS); // Timeout para DLQ
 
