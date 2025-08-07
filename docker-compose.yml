@@ -20,7 +20,7 @@ services:
       - HIBERNATE_SHOW_SQL=false
       - HIBERNATE_FORMAT_SQL=true
       - HIBERNATE_USE_SQL_COMMENTS=false
-      - PROCESS_STRATEGY=default
+      - PROCESS_STRATEGY=queue
     expose:
       - "8080"
     depends_on:

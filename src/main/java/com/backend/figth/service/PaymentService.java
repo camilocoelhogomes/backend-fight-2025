@@ -141,9 +141,8 @@ public class PaymentService {
 	}
 
 	@Async("taskExecutor")
-	public CompletableFuture<PaymentBatchProcessorDTO> processPayment(PaymentQueue paymentQueue) {
-		PaymentBatchProcessorDTO paymentBatchProcessorDTO = new PaymentBatchProcessorDTO();
-		paymentBatchProcessorDTO.setPaymentQueue(paymentQueue);
+	public CompletableFuture<Void> processPayment(PaymentBatchProcessorDTO paymentBatchProcessorDTO) {
+		var paymentQueue = paymentBatchProcessorDTO.getPaymentQueue();
 		try {
 			var requestTime = Instant.now();
 			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
@@ -154,19 +153,45 @@ public class PaymentService {
 			log.info("Calling payment processor for correlationId: {}",
 					paymentQueue.getStoredData().getCorrelationId());
 
-			// Passo 2: Chamar payment processor
-			var processorResponse = paymentProcessorClient.processPayment(processorRequest);
+			paymentProcessorClient.processPayment(processorRequest);
 			Payment payment = new Payment();
 			payment.setCorrelationId(UUID.fromString(paymentQueue.getStoredData().getCorrelationId()));
 			payment.setAmount(paymentQueue.getStoredData().getAmount());
 			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
 			payment.setPaymentService("D");
-
 			paymentBatchProcessorDTO.setPayment(payment);
+			return CompletableFuture.completedFuture(null);
 		} catch (Exception e) {
 			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
+			return CompletableFuture.completedFuture(null);
 		}
-		return CompletableFuture.completedFuture(paymentBatchProcessorDTO);
+	}
+
+	@Async("taskExecutor")
+	public CompletableFuture<Void> processPaymentFallback(PaymentBatchProcessorDTO paymentBatchProcessorDTO) {
+		var paymentQueue = paymentBatchProcessorDTO.getPaymentQueue();
+		try {
+			var requestTime = Instant.now();
+			PaymentProcessorRequestDTO processorRequest = new PaymentProcessorRequestDTO(
+					paymentQueue.getStoredData().getCorrelationId(),
+					paymentQueue.getStoredData().getAmount(),
+					requestTime);
+
+			log.info("Calling payment processor for correlationId: {}",
+					paymentQueue.getStoredData().getCorrelationId());
+
+			paymentProcessorFallbackClient.processPayment(processorRequest);
+			Payment payment = new Payment();
+			payment.setCorrelationId(UUID.fromString(paymentQueue.getStoredData().getCorrelationId()));
+			payment.setAmount(paymentQueue.getStoredData().getAmount());
+			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
+			payment.setPaymentService("F");
+			paymentBatchProcessorDTO.setPayment(payment);
+			return CompletableFuture.completedFuture(null);
+		} catch (Exception e) {
+			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
+			return CompletableFuture.completedFuture(null);
+		}
 	}
 
 	@Async("taskExecutor")

@@ -23,6 +23,11 @@ spring:
         format_sql: ${HIBERNATE_FORMAT_SQL:true}
         use_sql_comments: ${HIBERNATE_USE_SQL_COMMENTS:false}
         physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        # Configurações de Batch para otimização de performance
+        jdbc:
+          batch_size: ${PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE:20}
+        order_inserts: true
+        order_updates: true
   cloud:
     openfeign:
       client:
@@ -56,7 +61,10 @@ payment:
     url: ${PAYMENT_PROCESSOR_URL}
   processor-fallback:
     url: ${PAYMENT_PROCESSOR_FALLBACK_URL}
-
+  queue:
+    processor:
+      batch:
+        size: ${PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE:20}
 retry:
   max-attempts: ${RETRY_MAX_ATTEMPTS:3}
 
