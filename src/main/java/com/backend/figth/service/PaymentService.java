@@ -160,11 +160,12 @@ public class PaymentService {
 			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
 			payment.setPaymentService("D");
 			paymentBatchProcessorDTO.setPayment(payment);
-			return CompletableFuture.completedFuture(null);
+
 		} catch (Exception e) {
 			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
-			return CompletableFuture.completedFuture(null);
+			paymentBatchProcessorDTO.setPayment(null);
 		}
+		return CompletableFuture.completedFuture(null);
 	}
 
 	@Async("taskExecutor")
@@ -187,11 +188,12 @@ public class PaymentService {
 			payment.setRequestedAt(LocalDateTime.ofInstant(requestTime, ZoneId.of("UTC")));
 			payment.setPaymentService("F");
 			paymentBatchProcessorDTO.setPayment(payment);
-			return CompletableFuture.completedFuture(null);
 		} catch (Exception e) {
 			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
-			return CompletableFuture.completedFuture(null);
+			paymentBatchProcessorDTO.setPayment(null);
 		}
+		return CompletableFuture.completedFuture(null);
+
 	}
 
 	@Async("taskExecutor")
@@ -219,6 +221,7 @@ public class PaymentService {
 			paymentBatchProcessorDTO.setPayment(payment);
 		} catch (Exception e) {
 			log.error("Error processing payment for correlationId: {}", paymentQueue.getStoredData().getCorrelationId(), e);
+			paymentBatchProcessorDTO.setPayment(null);
 		}
 		return CompletableFuture.completedFuture(paymentBatchProcessorDTO);
 	}

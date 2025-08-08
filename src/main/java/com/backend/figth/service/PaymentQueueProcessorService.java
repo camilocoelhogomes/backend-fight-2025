@@ -66,6 +66,7 @@ public class PaymentQueueProcessorService {
     List<PaymentQueue> paymentQueues = this.getPaymentQueues();
     if (paymentQueues.isEmpty()) {
       log.info("No payment queues to process");
+      Thread.sleep(1000);
       return;
     }
     List<PaymentBatchProcessorDTO> paymentBatchProcessorDTOs = paymentQueues.stream().map(paymentQueue -> {

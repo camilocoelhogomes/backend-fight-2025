@@ -21,6 +21,7 @@ services:
       - HIBERNATE_FORMAT_SQL=true
       - HIBERNATE_USE_SQL_COMMENTS=false
       - PROCESS_STRATEGY=queue
+      - PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE=100
     expose:
       - "8080"
     depends_on:

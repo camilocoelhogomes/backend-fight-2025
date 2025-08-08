@@ -65,6 +65,7 @@ payment:
     processor:
       batch:
         size: ${PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE:20}
+
 retry:
   max-attempts: ${RETRY_MAX_ATTEMPTS:3}
 

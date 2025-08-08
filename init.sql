@@ -16,6 +16,4 @@ CREATE UNLOGGED TABLE payment_queue (
 
 CREATE INDEX payments_requested_at ON payments (requested_at);
 CREATE INDEX payments_payment_service ON payments (payment_service);
-CREATE INDEX payment_dlq_processed ON payment_dlq (processed);
-CREATE INDEX payment_dlq_partition_key ON payment_dlq (partition_key);
 CREATE INDEX payment_queue_queue_status ON payment_queue (queue_status);
