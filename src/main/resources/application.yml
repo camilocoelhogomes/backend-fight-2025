@@ -64,7 +64,9 @@ payment:
   queue:
     processor:
       batch:
-        size: ${PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE:20}
+        size:  ${PAYMENT_QUEUE_PROCESSOR_BATCH_SIZE:20}
+      timeout:
+        seconds: ${PAYMENT_QUEUE_PROCESSOR_TIMEOUT:3}
 
 retry:
   max-attempts: ${RETRY_MAX_ATTEMPTS:3}

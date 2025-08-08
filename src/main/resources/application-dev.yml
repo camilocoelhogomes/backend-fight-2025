@@ -72,10 +72,10 @@ payment:
   queue:
     processor:
       batch:
-        size: 20
+        size: 100
 
 retry:
   max-attempts: 3
 
 process:
-  strategy: default
+  strategy: queue

@@ -30,6 +30,9 @@ public class PaymentQueue {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "updated_at", nullable = false)
+  private LocalDateTime updatedAt;
+
   @Column(name = "queue_status", nullable = false)
   private String queueStatus;
 
