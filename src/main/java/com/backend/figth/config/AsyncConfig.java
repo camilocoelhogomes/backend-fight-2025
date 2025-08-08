@@ -21,10 +21,8 @@ public class AsyncConfig {
   public Executor dbExecutor(
       @Value("${spring.datasource.hikari.maximum-pool-size}") int maxPoolSize,
       @Value("${process.strategy:default}") String strategy) {
-    if ("queue".equals(strategy)) {
-      return Executors.newFixedThreadPool(maxPoolSize - 2);
-    }
-    return Executors.newFixedThreadPool(maxPoolSize - 1);
+    return Executors.newFixedThreadPool(maxPoolSize - 3);
+
   }
 
   @Bean(name = "dbExecutorReader")

@@ -2,9 +2,13 @@ package com.backend.figth.service;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,7 +26,6 @@ import com.backend.figth.entity.Payment;
 import com.backend.figth.entity.PaymentQueue;
 import com.backend.figth.repository.PaymentQueueRepository;
 import com.backend.figth.repository.PaymentRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,9 +37,8 @@ public class PaymentQueueProcessorService {
   private final PaymentQueueRepository paymentQueueRepository;
   private final PaymentService paymentService;
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-  private final PaymentRepository paymentRepository;
   private final JdbcTemplate jdbcTemplate;
-
+  private final PaymentRepository paymentRepository;
   @Value("${payment.queue.processor.batch.size:20}")
   private Integer batchSize;
 
@@ -63,40 +65,70 @@ public class PaymentQueueProcessorService {
   }
 
   public void processQueue() throws InterruptedException {
-    List<PaymentQueue> paymentQueues = this.getPaymentQueues();
+    // Realiza a leitra da fila de pagamentos
+    List<PaymentQueue> paymentQueues = this.paymentQueueRepository.batchReader(this.batchSize,
+        LocalDateTime.now().atZone(ZoneId.of("UTC")).toLocalDateTime());
     if (paymentQueues.isEmpty()) {
       log.info("No payment queues to process");
       Thread.sleep(1000);
       return;
     }
-    List<PaymentBatchProcessorDTO> paymentBatchProcessorDTOs = paymentQueues.stream().map(paymentQueue -> {
-      var paymentBatchProcessorDTO = new PaymentBatchProcessorDTO();
-      paymentBatchProcessorDTO.setPaymentQueue(paymentQueue);
-      return paymentBatchProcessorDTO;
-    }).collect(Collectors.toList());
+
+    // Cria o DTO para processar os pagamentos
+    List<PaymentBatchProcessorDTO> paymentBatchProcessorDTOs = paymentQueues.stream()
+        .map(PaymentBatchProcessorDTO::new)
+        .collect(Collectors.toList());
+    // Obtém os pagamentos já processados
+    HashSet<UUID> processedPayments = new HashSet<>(this.paymentRepository
+        .getPaymentsByCorrelationId(paymentBatchProcessorDTOs.stream()
+            .map(PaymentBatchProcessorDTO::getCorrelationId)
+            .collect(Collectors.toList()))
+        .stream()
+        .map(Payment::getCorrelationId)
+        .collect(Collectors.toList()));
+    // Processa os pagamentos
+    var paymentFutures = paymentBatchProcessorDTOs.stream()
+        .filter(paymentBatchProcessorDTO -> !processedPayments.contains(paymentBatchProcessorDTO.getCorrelationId()))
+        .map(paymentService::processPayment)
+        .toArray(CompletableFuture[]::new);
     CompletableFuture
-        .allOf(paymentBatchProcessorDTOs.stream()
-            .map(paymentService::processPayment)
-            .toArray(CompletableFuture[]::new))
+        .allOf(paymentFutures)
         .join();
-    List<Payment> payments = getPayments(paymentBatchProcessorDTOs);
+    // Persiste os pagamentos
+    HashSet<Payment> paymentsSet = new HashSet<>();
+    List<Payment> payments = paymentBatchProcessorDTOs.stream()
+        .map(PaymentBatchProcessorDTO::getPayment)
+        .filter(Objects::nonNull)
+        .peek(paymentsSet::add)
+        .collect(Collectors.toList());
     this.persistPayments(payments);
+
+    // Processa os pagamentos de fallback
+    List<PaymentBatchProcessorDTO> paymentBatchProcessorDTOsFallback = paymentBatchProcessorDTOs.stream()
+        .filter(paymentBatchProcessorDTO -> !paymentsSet.contains(paymentBatchProcessorDTO.getPayment()))
+        .filter(paymentBatchProcessorDTO -> !processedPayments.contains(paymentBatchProcessorDTO.getCorrelationId()))
+        .collect(Collectors.toList());
+    var paymentFuturesFallback = paymentBatchProcessorDTOsFallback.stream()
+        .map(paymentService::processPaymentFallback)
+        .toArray(CompletableFuture[]::new);
     CompletableFuture
-        .allOf(paymentBatchProcessorDTOs.stream()
-            .filter(paymentBatchProcessorDTO -> paymentBatchProcessorDTO.getPayment() == null)
-            .map(paymentService::processPaymentFallback)
-            .toArray(CompletableFuture[]::new))
+        .allOf(paymentFuturesFallback)
         .join();
+
+    // Persiste os pagamentos de fallback
     List<Payment> paymentsFallback = paymentBatchProcessorDTOs.stream()
         .map(PaymentBatchProcessorDTO::getPayment)
         .filter(Objects::nonNull)
         .filter(payment -> "F".equals(payment.getPaymentService()))
+        .peek(paymentsSet::add)
         .collect(Collectors.toList());
     this.persistPayments(paymentsFallback);
+
+    // Atualiza a fila de pagamentos
     List<Long> paymentQueueIdsCommited = new ArrayList<>();
     List<Long> paymentQueueIdsFailed = new ArrayList<>();
     paymentBatchProcessorDTOs.forEach(paymentBatchProcessorDTO -> {
-      if (paymentBatchProcessorDTO.getPayment() != null) {
+      if (paymentsSet.contains(paymentBatchProcessorDTO.getPayment())) {
         paymentQueueIdsCommited.add(paymentBatchProcessorDTO.getPaymentQueue().getId());
         return;
       }
@@ -110,16 +142,6 @@ public class PaymentQueueProcessorService {
       Thread.sleep(1000);
     }
 
-  }
-
-  @Transactional
-  private List<Payment> getPayments(List<PaymentBatchProcessorDTO> paymentBatchProcessorDTOs) {
-    List<Payment> payments = paymentBatchProcessorDTOs.stream()
-        .map(PaymentBatchProcessorDTO::getPayment)
-        .filter(Objects::nonNull)
-        .filter(payment -> "D".equals(payment.getPaymentService()))
-        .collect(Collectors.toList());
-    return payments;
   }
 
   private void persistPayments(List<Payment> payments) {
@@ -140,15 +162,6 @@ public class PaymentQueueProcessorService {
             return payments.size();
           }
         });
-
-  }
-
-  @Transactional
-  private List<PaymentQueue> getPaymentQueues() {
-    var paymentQueues = this.paymentQueueRepository.batchReader(this.batchSize);
-    this.paymentQueueRepository.batchUpdate("P",
-        paymentQueues.stream().map(PaymentQueue::getId).collect(Collectors.toList()));
-    return paymentQueues;
   }
 
 }

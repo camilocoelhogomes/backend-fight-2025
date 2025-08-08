@@ -40,17 +40,10 @@ public class PaymentController {
       @RequestBody PaymentRequestDTO request) {
     log.info("Received payment request with correlationId: {}", request.getCorrelationId());
 
-    if (processStrategy.equals("queue")) {
-      this.paymentService.saveToQueue(request);
-      return ResponseEntity.status(HttpStatus.ACCEPTED)
-          .body(new PaymentResponseDTO("Payment request accepted for processing", "ACCEPTED"));
-    }
-    // Dispara o processamento assíncrono sem aguardar o resultado
-    this.paymentService.processPaymentAsync(request);
-
-    // Retorna imediatamente com status 202 Accepted
+    this.paymentService.saveToQueue(request);
     return ResponseEntity.status(HttpStatus.ACCEPTED)
         .body(new PaymentResponseDTO("Payment request accepted for processing", "ACCEPTED"));
+
   }
 
   @GetMapping("/payments-summary")
