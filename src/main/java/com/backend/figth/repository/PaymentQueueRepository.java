@@ -33,6 +33,8 @@ public interface PaymentQueueRepository extends JpaRepository<PaymentQueue, Long
       """, nativeQuery = true)
   List<PaymentQueue> batchReader(@Param("limit") Integer limit, @Param("updatedAt") LocalDateTime updatedAt);
 
+  @Modifying
+  @Transactional
   @Query(value = "UPDATE payment_queue SET queue_status = :status WHERE id IN (:ids)", nativeQuery = true)
   void batchUpdate(@Param("status") String status, @Param("ids") List<Long> id);
 
