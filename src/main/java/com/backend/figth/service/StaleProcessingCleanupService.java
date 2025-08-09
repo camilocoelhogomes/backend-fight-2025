@@ -27,7 +27,7 @@ public class StaleProcessingCleanupService {
 
   @PostConstruct
   public void startCleanupProcess() {
-    log.info("Starting stale processing cleanup service with timeout: {}s", timeoutSeconds);
+    log.debug("Starting stale processing cleanup service with timeout: {}s", timeoutSeconds);
 
     CompletableFuture.runAsync(() -> {
       try {

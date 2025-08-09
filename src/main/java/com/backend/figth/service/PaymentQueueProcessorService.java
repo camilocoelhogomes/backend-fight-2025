@@ -44,7 +44,7 @@ public class PaymentQueueProcessorService {
 
   @PostConstruct
   public void startProcessing() {
-    log.info("Starting payment queue processor...");
+    log.debug("Starting payment queue processor...");
     CompletableFuture.runAsync(() -> {
       try {
         this.run();
@@ -66,10 +66,11 @@ public class PaymentQueueProcessorService {
 
   public void processQueue() throws InterruptedException {
     // Realiza a leitra da fila de pagamentos
+    var startTime = System.nanoTime();
     List<PaymentQueue> paymentQueues = this.paymentQueueRepository.batchReader(this.batchSize,
         LocalDateTime.now().atZone(ZoneId.of("UTC")).toLocalDateTime());
     if (paymentQueues.isEmpty()) {
-      log.info("No payment queues to process");
+      log.debug("No payment queues to process");
       Thread.sleep(1000);
       return;
     }
@@ -86,7 +87,11 @@ public class PaymentQueueProcessorService {
         .stream()
         .map(Payment::getCorrelationId)
         .collect(Collectors.toList()));
-    // Processa os pagamentos
+    // Filtra os pagamentos já processados
+    List<Long> paymentQueueIdsCommited = paymentBatchProcessorDTOs.stream()
+        .filter(paymentBatchProcessorDTO -> processedPayments.contains(paymentBatchProcessorDTO.getCorrelationId()))
+        .map(paymentBatchProcessorDTO -> paymentBatchProcessorDTO.getPaymentQueue().getId())
+        .collect(Collectors.toList());
     var paymentFutures = paymentBatchProcessorDTOs.stream()
         .filter(paymentBatchProcessorDTO -> !processedPayments.contains(paymentBatchProcessorDTO.getCorrelationId()))
         .map(paymentService::processPayment)
@@ -125,7 +130,6 @@ public class PaymentQueueProcessorService {
     this.persistPayments(paymentsFallback);
 
     // Atualiza a fila de pagamentos
-    List<Long> paymentQueueIdsCommited = new ArrayList<>();
     List<Long> paymentQueueIdsFailed = new ArrayList<>();
     paymentBatchProcessorDTOs.forEach(paymentBatchProcessorDTO -> {
       if (paymentsSet.contains(paymentBatchProcessorDTO.getPayment())) {
@@ -141,7 +145,11 @@ public class PaymentQueueProcessorService {
       log.error("Payment queue processor is not working properly, sleeping for 1 second");
       Thread.sleep(1000);
     }
-
+    log.info("Processando pagamentos={} sucesso={} error={} tempo={}ms",
+        paymentBatchProcessorDTOs.size(),
+        paymentQueueIdsCommited.size(),
+        paymentQueueIdsFailed.size(),
+        (System.nanoTime() - startTime) / 1_000_000);
   }
 
   private void persistPayments(List<Payment> payments) {

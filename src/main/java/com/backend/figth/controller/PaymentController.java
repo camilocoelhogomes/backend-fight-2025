@@ -38,7 +38,7 @@ public class PaymentController {
   @PostMapping("/payments")
   public ResponseEntity<PaymentResponseDTO> createPayment(
       @RequestBody PaymentRequestDTO request) {
-    log.info("Received payment request with correlationId: {}", request.getCorrelationId());
+    log.debug("Received payment request with correlationId: {}", request.getCorrelationId());
 
     this.paymentService.saveToQueue(request);
     return ResponseEntity.status(HttpStatus.ACCEPTED)
@@ -52,7 +52,7 @@ public class PaymentController {
       @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to)
       throws InterruptedException, ExecutionException {
 
-    log.info("Getting payment summary from {} to {}", from, to);
+    log.debug("Getting payment summary from {} to {}", from, to);
 
     PaymentSummaryResponseDTO summary = paymentSummaryService.getPaymentSummary(from, to).get();
     return ResponseEntity.ok(summary);

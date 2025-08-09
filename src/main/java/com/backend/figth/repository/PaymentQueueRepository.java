@@ -15,6 +15,8 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public interface PaymentQueueRepository extends JpaRepository<PaymentQueue, Long> {
+  @Modifying
+  @Transactional
   @Query(value = """
         WITH locked_rows AS (
             SELECT id
