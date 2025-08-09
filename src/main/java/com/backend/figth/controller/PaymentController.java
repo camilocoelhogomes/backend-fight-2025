@@ -48,8 +48,8 @@ public class PaymentController {
 
   @GetMapping("/payments-summary")
   public ResponseEntity<PaymentSummaryResponseDTO> getPaymentSummary(
-      @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
-      @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to)
+      @RequestParam(value = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+      @RequestParam(value = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to)
       throws InterruptedException, ExecutionException {
 
     log.debug("Getting payment summary from {} to {}", from, to);

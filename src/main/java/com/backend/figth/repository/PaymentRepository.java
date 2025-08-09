@@ -20,4 +20,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
         @Query(value = "SELECT * FROM payments p WHERE p.correlationid in :correlationId", nativeQuery = true)
         List<Payment> getPaymentsByCorrelationId(@Param("correlationId") List<UUID> correlationId);
+
+        @Query(value = "SELECT p.payment_service as paymentService, COUNT(p.id) as totalRequests, SUM(p.amount) as totalAmount FROM payments p GROUP BY p.payment_service", nativeQuery = true)
+        List<PaymentSummaryQueryDTO> getPaymentSummaryAll();
+
+        @Query(value = "SELECT p.payment_service as paymentService, COUNT(p.id) as totalRequests, SUM(p.amount) as totalAmount FROM payments p WHERE p.requested_at >= :fromDate GROUP BY p.payment_service", nativeQuery = true)
+        List<PaymentSummaryQueryDTO> getPaymentSummaryFromOnly(@Param("fromDate") LocalDateTime fromDate);
+
+        @Query(value = "SELECT p.payment_service as paymentService, COUNT(p.id) as totalRequests, SUM(p.amount) as totalAmount FROM payments p WHERE p.requested_at <= :toDate GROUP BY p.payment_service", nativeQuery = true)
+        List<PaymentSummaryQueryDTO> getPaymentSummaryToOnly(@Param("toDate") LocalDateTime toDate);
 }

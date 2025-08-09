@@ -25,9 +25,18 @@ public class PaymentSummaryService {
   @Async("dbExecutorReader")
   public CompletableFuture<PaymentSummaryResponseDTO> getPaymentSummary(LocalDateTime fromDate, LocalDateTime toDate) {
     try {
-      log.info("Getting payment summary from {} to {}", fromDate, toDate);
+      log.debug("Getting payment summary from {} to {}", fromDate, toDate);
 
-      List<PaymentSummaryQueryDTO> results = paymentRepository.getPaymentSummaryByDateRange(fromDate, toDate);
+      List<PaymentSummaryQueryDTO> results;
+      if (fromDate == null && toDate == null) {
+        results = paymentRepository.getPaymentSummaryAll();
+      } else if (fromDate != null && toDate == null) {
+        results = paymentRepository.getPaymentSummaryFromOnly(fromDate);
+      } else if (fromDate == null) { // toDate != null
+        results = paymentRepository.getPaymentSummaryToOnly(toDate);
+      } else {
+        results = paymentRepository.getPaymentSummaryByDateRange(fromDate, toDate);
+      }
 
       PaymentSummaryDTO defaultService = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
       PaymentSummaryDTO fallback = new PaymentSummaryDTO(0L, BigDecimal.ZERO);
