@@ -28,9 +28,10 @@ public class PaymentService {
 	private final PaymentPersistenceService paymentPersistenceService;
 	private final PaymentProcessorFallbackClient paymentProcessorFallbackClient;
 
+	@Async("taskExecutor")
 	public CompletableFuture<Void> saveToQueue(PaymentRequestDTO request) {
 		try {
-			log.info("Saving payment to queue for correlationId: {}", request.getCorrelationId());
+			log.debug("Saving payment to queue for correlationId: {}", request.getCorrelationId());
 			var paymentQueue = new PaymentQueue();
 			paymentQueue.setStoredData(request);
 			paymentQueue.setCreatedAt(LocalDateTime.now(ZoneId.of("UTC")));
@@ -39,7 +40,7 @@ public class PaymentService {
 			var dlqFuture = paymentPersistenceService.persistPaymentQueue(paymentQueue);
 			dlqFuture.get(); // Timeout para DLQ
 
-			log.info("Failed payment successfully saved to DLQ for correlationId: {}",
+			log.debug("Failed payment successfully saved to DLQ for correlationId: {}",
 					request.getCorrelationId());
 		} catch (Exception dlqError) {
 			log.error("Failed to save payment to DLQ for correlationId: {}",
@@ -58,7 +59,7 @@ public class PaymentService {
 					paymentQueue.getStoredData().getAmount(),
 					requestTime);
 
-			log.info("Calling payment processor for correlationId: {}",
+			log.debug("Calling payment processor for correlationId: {}",
 					paymentQueue.getStoredData().getCorrelationId());
 
 			paymentProcessorClient.processPayment(processorRequest);
@@ -83,7 +84,7 @@ public class PaymentService {
 					paymentQueue.getStoredData().getAmount(),
 					requestTime);
 
-			log.info("Calling payment processor for correlationId: {}",
+			log.debug("Calling payment processor for correlationId: {}",
 					paymentQueue.getStoredData().getCorrelationId());
 
 			paymentProcessorFallbackClient.processPayment(processorRequest);
